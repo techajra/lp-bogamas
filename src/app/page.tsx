@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
-import { Fraunces, DM_Sans } from 'next/font/google';
+import { Cormorant, DM_Sans } from 'next/font/google';
 import BogamasLanding from '@/components/BogamasLanding';
 
-const serif = Fraunces({ subsets: ['latin'], style: ['normal', 'italic'], variable: '--font-bm-serif' });
+const serif = Cormorant({ subsets: ['latin'], style: ['normal', 'italic'], variable: '--font-bm-serif' });
 const sans = DM_Sans({ subsets: ['latin'], variable: '--font-bm-sans' });
 
 export const metadata: Metadata = {
