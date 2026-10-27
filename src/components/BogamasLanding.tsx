@@ -1,13 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import { ArrowRight, ChevronLeft, ChevronRight, Menu, MessageCircle, Plus, X } from 'lucide-react';
 
 // ─── Konfigurasi — ganti sebelum dipublikasikan ─────────────────────────
 // Nomor WhatsApp bot toko (format internasional, tanpa "+"). Chat yang masuk ke
 // nomor ini akan dilayani alur Toko (katalog → keranjang → transfer/COD).
-const WA_NUMBER = '6280000000000';
+const WA_NUMBER = '6283878574713';
+// Nomor yang sama, format enak dibaca untuk ditampilkan di footer.
+const WA_DISPLAY = '0838-7857-4713';
+// Harga sementara disembunyikan dari halaman; ubah ke true untuk menampilkannya lagi.
+const SHOW_PRICES = false;
 // Harga contoh — samakan dengan harga di menu Toko > Produk.
 const PRODUCTS = [
   {
@@ -19,7 +23,7 @@ const PRODUCTS = [
   {
     name: 'Minyak Kelapa 1 Liter',
     desc: 'Ukuran harian untuk dapur rumah tangga.',
-    price: 38000,
+    price: 45000,
     img: '/bogamas/botol-1l.jpg',
   },
   {
@@ -65,6 +69,7 @@ const rupiah = (n: number) => 'Rp' + n.toLocaleString('id-ID');
 const NAV = [
   { label: 'Produk', href: '#produk' },
   { label: 'Cerita Kami', href: '#cerita' },
+  { label: 'Produksi', href: '#produksi' },
   { label: 'Janji Kami', href: '#janji' },
   { label: 'FAQ', href: '#faq' },
 ];
@@ -87,26 +92,27 @@ const CLAIMS = [
 const serif = '[font-family:var(--font-bm-serif)]';
 const ext = { target: '_blank', rel: 'noopener noreferrer' } as const;
 
+// Palet: putih sebagai dasar, kuning Bogamas #F5C400 sebagai warna utama, hijau #2B6B35 / #1D4D27 sebagai aksen kecil.
 // Tombol bergaya Cocofina: kotak, huruf renggang, tanpa sudut bulat.
 const btnSolid =
-  'inline-flex items-center justify-center gap-2 bg-[#C8163E] px-7 py-3.5 text-[15px] tracking-[0.06em] text-white transition hover:bg-[#A8112F]';
-const btnOutlineLight =
-  'inline-flex items-center justify-center gap-2 border border-[#FAF7F2]/70 px-7 py-3.5 text-[15px] tracking-[0.06em] text-[#FAF7F2] transition hover:bg-[#FAF7F2]/10';
+  'inline-flex items-center justify-center gap-2 bg-[#F5C400] px-7 py-3.5 text-[15px] font-medium tracking-[0.06em] text-[#1C2418] transition hover:bg-[#E5B600]';
+const btnOutline =
+  'inline-flex items-center justify-center gap-2 border border-[#1C2418]/50 px-7 py-3.5 text-[15px] tracking-[0.06em] text-[#1C2418] transition hover:border-[#1C2418] hover:bg-[#1C2418]/5';
 
 function Logo() {
   return (
-    <a href="#" aria-label="Bogamas" className="block bg-[#C8163E] px-2.5 py-1.5 text-center leading-none text-white">
+    <a href="#" aria-label="Bogamas" className="block bg-[#F5C400] px-2.5 py-1.5 text-center leading-none text-[#1D4D27]">
       <span className="block text-[17px] font-bold tracking-tight">BOGA</span>
       <span className="block text-[17px] font-bold tracking-tight">MAS</span>
-      <span className="mt-0.5 block text-[6.5px] uppercase tracking-[0.12em] text-white/85">minyak kelapa</span>
+      <span className="mt-0.5 block text-[6.5px] uppercase tracking-[0.12em] text-[#1D4D27]/80">minyak kelapa</span>
     </a>
   );
 }
 
 function Eyebrow({ children }: { children: React.ReactNode }) {
   return (
-    <p className="flex items-center gap-3 text-[11px] uppercase tracking-[0.24em] text-[#C8163E]">
-      <span className="h-px w-10 bg-[#C8163E]" />
+    <p className="flex items-center gap-3 text-[11px] uppercase tracking-[0.24em] text-[#1D4D27]">
+      <span className="h-px w-10 bg-[#1D4D27]" />
       {children}
     </p>
   );
@@ -120,15 +126,15 @@ function AnnouncementBar() {
   }, []);
   const go = (d: number) => setI((v) => (v + d + ANNOUNCEMENTS.length) % ANNOUNCEMENTS.length);
   return (
-    <div className="bg-[#1A1208] text-[#FAF7F2]">
+    <div className="bg-[#1D4D27] text-white">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-2 sm:px-8">
-        <button onClick={() => go(-1)} aria-label="Pengumuman sebelumnya" className="p-1 text-[#FAF7F2]/80 hover:text-[#FAF7F2]">
+        <button onClick={() => go(-1)} aria-label="Pengumuman sebelumnya" className="p-1 text-[#FFFFFF]/80 hover:text-[#FFFFFF]">
           <ChevronLeft className="h-4 w-4" />
         </button>
         <p className={`${serif} text-center text-[15px]`} aria-live="polite">
           {ANNOUNCEMENTS[i]}
         </p>
-        <button onClick={() => go(1)} aria-label="Pengumuman berikutnya" className="p-1 text-[#FAF7F2]/80 hover:text-[#FAF7F2]">
+        <button onClick={() => go(1)} aria-label="Pengumuman berikutnya" className="p-1 text-[#FFFFFF]/80 hover:text-[#FFFFFF]">
           <ChevronRight className="h-4 w-4" />
         </button>
       </div>
@@ -139,11 +145,11 @@ function AnnouncementBar() {
 function Navbar() {
   const [open, setOpen] = useState(false);
   return (
-    <header className="sticky top-0 z-40 border-b border-[#1A1208]/10 bg-[#FAF7F2]">
+    <header className="sticky top-0 z-40 border-b border-[#1C2418]/10 bg-[#FFFFFF]">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-2.5 sm:px-8">
         <div className="flex items-center gap-10">
           <Logo />
-          <nav className="hidden items-center gap-7 text-[15px] tracking-[0.03em] text-[#1A1208] md:flex">
+          <nav className="hidden items-center gap-7 text-[15px] tracking-[0.03em] text-[#1C2418] md:flex">
             {NAV.map((n) => (
               <a key={n.href} href={n.href} className="underline-offset-4 hover:underline">
                 {n.label}
@@ -155,13 +161,13 @@ function Navbar() {
           <a
             href={WA_GENERAL}
             {...ext}
-            className="hidden items-center gap-2 px-3 py-2 text-[15px] tracking-[0.03em] text-[#1A1208] underline-offset-4 hover:underline sm:inline-flex"
+            className="hidden items-center gap-2 px-3 py-2 text-[15px] tracking-[0.03em] text-[#1C2418] underline-offset-4 hover:underline sm:inline-flex"
           >
             <MessageCircle className="h-5 w-5" strokeWidth={1.5} /> Pesan
           </a>
           <button
             onClick={() => setOpen((v) => !v)}
-            className="grid h-10 w-10 place-items-center text-[#1A1208] md:hidden"
+            className="grid h-10 w-10 place-items-center text-[#1C2418] md:hidden"
             aria-label={open ? 'Tutup menu' : 'Buka menu'}
           >
             {open ? <X className="h-5 w-5" strokeWidth={1.5} /> : <Menu className="h-5 w-5" strokeWidth={1.5} />}
@@ -169,9 +175,9 @@ function Navbar() {
         </div>
       </div>
       {open && (
-        <nav className="border-t border-[#1A1208]/10 px-4 pb-4 md:hidden">
+        <nav className="border-t border-[#1C2418]/10 px-4 pb-4 md:hidden">
           {NAV.map((n) => (
-            <a key={n.href} href={n.href} onClick={() => setOpen(false)} className="block border-b border-[#1A1208]/10 py-3.5 text-[#1A1208]">
+            <a key={n.href} href={n.href} onClick={() => setOpen(false)} className="block border-b border-[#1C2418]/10 py-3.5 text-[#1C2418]">
               {n.label}
             </a>
           ))}
@@ -186,7 +192,7 @@ function Navbar() {
 
 function Hero() {
   return (
-    <section className="relative bg-[#EDE5D8]">
+    <section className="relative bg-[#FFF7DB]">
       {/* Foto mengisi sisi kanan; foto produk saat ini portrait & resolusi kecil, jadi tidak dibuat full-bleed. */}
       <div className="absolute inset-y-0 right-0 hidden w-[58%] md:block">
         <Image
@@ -209,18 +215,18 @@ function Hero() {
         />
       </div>
       <div className="relative mx-auto flex max-w-6xl px-4 sm:px-8 md:min-h-[620px] md:items-end md:pb-14">
-        <div className="-mt-24 w-full bg-[#1A1208]/95 px-6 py-8 text-[#FAF7F2] sm:px-10 sm:py-10 md:mt-0 md:max-w-xl">
+        <div className="-mt-24 w-full border-t-4 border-[#F5C400] bg-white px-6 py-8 text-[#1C2418] shadow-[0_24px_60px_-24px_rgba(28,36,24,0.45)] sm:px-10 sm:py-10 md:mt-0 md:max-w-xl">
           <h1 className={`${serif} text-[2.6rem] leading-[1.08] sm:text-[3.4rem]`}>
-            Minyak kelapa yang <em className="not-italic text-[#E0506D]">jujur</em>, dari dapur Purworejo.
+            Minyak kelapa yang <em className="not-italic text-[#2B6B35]">jujur</em>, dari dapur Purworejo.
           </h1>
-          <p className="mt-5 text-base tracking-[0.03em] text-[#FAF7F2]/80">
+          <p className="mt-5 text-base tracking-[0.03em] text-[#1C2418]/75">
             Satu bahan. Kelapa pilihan. Tanpa campuran.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <a href="#produk" className={btnSolid}>
               Lihat Produk
             </a>
-            <a href="#cerita" className={btnOutlineLight}>
+            <a href="#cerita" className={btnOutline}>
               Cerita Kami
             </a>
           </div>
@@ -233,8 +239,8 @@ function Hero() {
 function Marquee() {
   const row = [...CLAIMS, ...CLAIMS];
   return (
-    <div className="bg-[#FAF7F2] py-10">
-      <div className="overflow-hidden bg-[#1A1208] py-3.5 text-[#FAF7F2]/80">
+    <div className="bg-[#FFFFFF] py-10">
+      <div className="overflow-hidden bg-[#F5C400] py-3.5 text-[#1C2418]">
         <div className="flex w-max animate-[bm-marquee_40s_linear_infinite] motion-reduce:animate-none">
           {row.map((c, i) => (
             <span key={i} className="flex items-center whitespace-nowrap text-[11px] uppercase tracking-[0.2em]">
@@ -256,15 +262,15 @@ function Stats() {
     { k: 'PIRT', v: 'Halal MUI & terdaftar resmi' },
   ];
   return (
-    <section className="border-y border-[#1A1208]/10 bg-[#FAF7F2]">
+    <section className="border-y border-[#1C2418]/10 bg-[#FFFFFF]">
       <div className="mx-auto grid max-w-6xl grid-cols-2 px-4 sm:px-8 md:grid-cols-4">
         {items.map((s, i) => (
           <div
             key={s.v}
-            className={`px-4 py-10 text-center border-[#1A1208]/10 ${i % 2 === 1 ? 'border-l' : ''} ${i >= 2 ? 'border-t md:border-t-0' : ''} ${i === 2 ? 'md:border-l' : ''}`}
+            className={`px-4 py-10 text-center border-[#1C2418]/10 ${i % 2 === 1 ? 'border-l' : ''} ${i >= 2 ? 'border-t md:border-t-0' : ''} ${i === 2 ? 'md:border-l' : ''}`}
           >
-            <p className={`${serif} text-5xl text-[#C8163E] sm:text-[3.25rem]`}>{s.k}</p>
-            <p className="mx-auto mt-3 max-w-[12rem] text-[10px] uppercase leading-relaxed tracking-[0.14em] text-[#1A1208]/70">{s.v}</p>
+            <p className={`${serif} text-5xl text-[#2B6B35] sm:text-[3.25rem]`}>{s.k}</p>
+            <p className="mx-auto mt-3 max-w-[12rem] text-[10px] uppercase leading-relaxed tracking-[0.14em] text-[#1C2418]/70">{s.v}</p>
           </div>
         ))}
       </div>
@@ -274,16 +280,16 @@ function Stats() {
 
 function Story() {
   return (
-    <section id="cerita" className="scroll-mt-20 bg-[#FAF7F2] py-14 md:py-20">
-      <div className="mx-auto grid max-w-6xl items-center bg-[#EFE8DD] md:grid-cols-2">
+    <section id="cerita" className="scroll-mt-20 bg-[#FFFFFF] py-14 md:py-20">
+      <div className="mx-auto grid max-w-6xl items-center bg-[#FFF7DB] md:grid-cols-2">
         <div className="relative aspect-[4/5] md:aspect-auto md:h-full md:min-h-[640px]">
           <Image src="/bogamas/cerita.jpg" alt="Dua botol minyak kelapa Boga Mas 1 liter" fill sizes="(min-width: 768px) 36rem, 100vw" className="object-cover" />
         </div>
         <div className="px-6 py-12 sm:px-12 md:py-16">
-          <h2 className={`${serif} text-[2.6rem] leading-[1.15] text-[#1A1208] sm:text-5xl`}>
+          <h2 className={`${serif} text-[2.6rem] leading-[1.15] text-[#1C2418] sm:text-5xl`}>
             Lahir di Purworejo. Dibuat seperti minyak klentik nenek.
           </h2>
-          <div className="mt-7 space-y-4 leading-[1.8] tracking-[0.03em] text-[#1A1208]/75">
+          <div className="mt-7 space-y-4 leading-[1.8] tracking-[0.03em] text-[#1C2418]/75">
             <p>
               Dulu, minyak kelapa dibuat di dapur sendiri: kelapa diparut, diperas, lalu dimasak pelan sampai jernih.
               Hasilnya harum, gurih, dan awet dipakai menggoreng.
@@ -302,11 +308,79 @@ function Story() {
   );
 }
 
+// Video rekaman HP dari tempat produksi (sudah dipotong & dikompres, tanpa suara).
+const PRODUCTION_CLIPS = [
+  { src: '/bogamas/produksi/mesin.mp4', poster: '/bogamas/produksi/mesin.jpg', t: 'Ruang pengolahan' },
+  { src: '/bogamas/produksi/jerigen.mp4', poster: '/bogamas/produksi/jerigen.jpg', t: 'Minyak siap dikemas' },
+  { src: '/bogamas/produksi/gudang.mp4', poster: '/bogamas/produksi/gudang.jpg', t: 'Gudang penyimpanan' },
+];
+
+// Hanya diputar saat terlihat di layar, supaya tidak menghabiskan kuota pengunjung.
+function InViewVideo({ src, poster, label }: { src: string; poster: string; label: string }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  useEffect(() => {
+    const v = ref.current;
+    if (!v) return;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) v.play().catch(() => {});
+        else v.pause();
+      },
+      { threshold: 0.4 },
+    );
+    io.observe(v);
+    return () => io.disconnect();
+  }, []);
+  return (
+    <video
+      ref={ref}
+      src={src}
+      poster={poster}
+      muted
+      loop
+      playsInline
+      preload="none"
+      aria-label={label}
+      className="h-full w-full object-cover"
+    />
+  );
+}
+
+function Production() {
+  return (
+    <section id="produksi" className="scroll-mt-20 bg-white pb-16 md:pb-24">
+      <div className="mx-auto max-w-6xl px-4 sm:px-8">
+        <div className="grid gap-6 md:grid-cols-[1fr_1fr] md:items-end">
+          <div>
+            <Eyebrow>Tempat produksi</Eyebrow>
+            <h2 className={`${serif} mt-6 text-4xl leading-[1.15] text-[#1C2418] sm:text-[2.6rem]`}>
+              Diolah dan dikemas di tempat kami sendiri.
+            </h2>
+          </div>
+          <p className="max-w-md leading-[1.8] tracking-[0.03em] text-[#1C2418]/75 md:justify-self-end">
+            Lihat langsung dari mana minyak Boga Mas berasal — dari ruang pengolahan sampai jerigen yang siap dikemas.
+          </p>
+        </div>
+        <ul className="-mx-4 mt-10 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:grid sm:grid-cols-3 sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0">
+          {PRODUCTION_CLIPS.map((c) => (
+            <li key={c.src} className="w-[68%] shrink-0 snap-start sm:w-auto">
+              <div className="aspect-[9/16] overflow-hidden bg-[#FFF7DB]">
+                <InViewVideo src={c.src} poster={c.poster} label={c.t} />
+              </div>
+              <p className={`${serif} mt-3 text-xl text-[#1C2418]`}>{c.t}</p>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
 function Products() {
   return (
-    <section id="produk" className="scroll-mt-20 bg-[#FAF7F2] pb-16 md:pb-24">
+    <section id="produk" className="scroll-mt-20 bg-[#FFFFFF] pb-16 md:pb-24">
       <div className="mx-auto max-w-6xl px-4 sm:px-8">
-        <h2 className={`${serif} text-3xl text-[#1A1208] sm:text-[2.1rem]`}>Beda ukuran. Satu standar.</h2>
+        <h2 className={`${serif} text-3xl text-[#1C2418] sm:text-[2.1rem]`}>Beda ukuran. Satu standar.</h2>
         <div className="mt-8 grid grid-cols-2 gap-x-3 gap-y-8 sm:gap-x-5 lg:grid-cols-4">
           {PRODUCTS.map((p) => (
             <article key={p.name} className="group">
@@ -320,15 +394,15 @@ function Products() {
                     className="object-cover transition duration-500 group-hover:scale-[1.03]"
                   />
                 </div>
-                <h3 className={`${serif} mt-3 text-[17px] leading-snug text-[#1A1208] underline-offset-4 group-hover:underline`}>
+                <h3 className={`${serif} mt-3 text-[17px] leading-snug text-[#1C2418] underline-offset-4 group-hover:underline`}>
                   {p.name} — {p.desc}
                 </h3>
               </a>
-              <p className="mt-2 text-[15px] tracking-[0.05em] text-[#1A1208]">{rupiah(p.price)}</p>
+              {SHOW_PRICES && <p className="mt-2 text-[15px] tracking-[0.05em] text-[#1C2418]">{rupiah(p.price)}</p>}
               <a
                 href={waLink(`Halo Bogamas, saya mau pesan ${p.name} 😊`)}
                 {...ext}
-                className="mt-2 inline-flex items-center gap-1.5 text-[13px] tracking-[0.06em] text-[#C8163E] hover:underline"
+                className="mt-2 inline-flex items-center gap-1.5 text-[13px] tracking-[0.06em] text-[#2B6B35] hover:underline"
               >
                 Pesan via WhatsApp <ArrowRight className="h-3.5 w-3.5" />
               </a>
@@ -342,15 +416,15 @@ function Products() {
 
 function Reviews() {
   return (
-    <section className="bg-[#FAF7F2] pb-16 md:pb-24">
+    <section className="bg-[#FFFFFF] pb-16 md:pb-24">
       <div className="mx-auto max-w-6xl px-4 sm:px-8">
-        <h2 className={`${serif} text-4xl text-[#1A1208] sm:text-[2.6rem]`}>Ulasan</h2>
+        <h2 className={`${serif} text-4xl text-[#1C2418] sm:text-[2.6rem]`}>Ulasan</h2>
         <div className="mt-8 grid gap-4 md:grid-cols-3">
           {REVIEWS.map((r) => (
-            <figure key={r.t} className="bg-[#EFEBE5] p-7">
-              <p className={`${serif} text-xl text-[#1A1208]`}>{r.t}</p>
-              <blockquote className="mt-4 leading-[1.75] tracking-[0.03em] text-[#1A1208]/75">{r.q}</blockquote>
-              <figcaption className="mt-3 font-semibold text-[#1A1208]/80">— {r.n}</figcaption>
+            <figure key={r.t} className="bg-[#FFF7DB] p-7">
+              <p className={`${serif} text-xl text-[#1C2418]`}>{r.t}</p>
+              <blockquote className="mt-4 leading-[1.75] tracking-[0.03em] text-[#1C2418]/75">{r.q}</blockquote>
+              <figcaption className="mt-3 font-semibold text-[#1C2418]/80">— {r.n}</figcaption>
             </figure>
           ))}
         </div>
@@ -373,18 +447,18 @@ function OurPromise() {
     { t: 'Resmi & halal.', d: 'Bersertifikat Halal MUI dan terdaftar PIRT 205330601026024. Diproduksi oleh Bogamas, Purworejo.' },
   ];
   return (
-    <section id="janji" className="scroll-mt-20 bg-[#1A1208] text-[#FAF7F2]">
+    <section id="janji" className="scroll-mt-20 bg-[#F5C400] text-[#1C2418]">
       <div className="mx-auto grid max-w-6xl gap-14 px-4 py-20 sm:px-8 md:grid-cols-2 md:py-28">
         <div>
           <Eyebrow>Janji kami</Eyebrow>
           <h2 className={`${serif} mt-6 text-[2.6rem] leading-[1.15] sm:text-5xl`}>
             Satu bahan.
             <br />
-            <em className="text-[#E0506D]">Tanpa campuran.</em>
+            <em className="text-[#1D4D27]">Tanpa campuran.</em>
             <br />
             Tanpa kompromi.
           </h2>
-          <p className="mt-8 max-w-md leading-[1.8] tracking-[0.03em] text-[#FAF7F2]/70">
+          <p className="mt-8 max-w-md leading-[1.8] tracking-[0.03em] text-[#1C2418]/75">
             Setiap botol Boga Mas dibuat dengan pertanyaan yang sama: apakah kami mau memakainya di dapur sendiri?
             Jawabannya harus selalu iya.
           </p>
@@ -392,10 +466,10 @@ function OurPromise() {
         <ol className="space-y-9">
           {items.map((it, i) => (
             <li key={it.t} className="flex gap-8">
-              <span className="pt-1.5 text-xs tabular-nums text-[#C8163E]">0{i + 1}</span>
+              <span className="pt-1.5 text-xs font-semibold tabular-nums text-[#1D4D27]">0{i + 1}</span>
               <div>
                 <h3 className={`${serif} text-2xl`}>{it.t}</h3>
-                <p className="mt-2 text-[15px] leading-[1.75] tracking-[0.03em] text-[#FAF7F2]/65">{it.d}</p>
+                <p className="mt-2 text-[15px] leading-[1.75] tracking-[0.03em] text-[#1C2418]/75">{it.d}</p>
               </div>
             </li>
           ))}
@@ -414,21 +488,21 @@ function Nutrition() {
     ['Karbohidrat total', '0 g'],
   ];
   return (
-    <section className="bg-[#FAF7F2] py-14 md:py-20">
-      <div className="mx-auto grid max-w-6xl items-center bg-[#EFE8DD] md:grid-cols-2">
+    <section className="bg-[#FFFFFF] py-14 md:py-20">
+      <div className="mx-auto grid max-w-6xl items-center bg-[#FFF7DB] md:grid-cols-2">
         <div className="order-2 px-6 py-12 sm:px-12 md:order-1 md:py-16">
-          <h2 className={`${serif} text-[2.6rem] leading-[1.15] text-[#1A1208] sm:text-5xl`}>
+          <h2 className={`${serif} text-[2.6rem] leading-[1.15] text-[#1C2418] sm:text-5xl`}>
             Baca labelnya. Kami tidak menyembunyikan apa pun.
           </h2>
-          <dl className="mt-8 border-t border-[#1A1208]/15">
+          <dl className="mt-8 border-t border-[#1C2418]/15">
             {rows.map(([k, v]) => (
-              <div key={k} className="flex items-center justify-between border-b border-[#1A1208]/15 py-3.5 tracking-[0.03em]">
-                <dt className="text-[#1A1208]/70">{k}</dt>
-                <dd className={k === 'Kolesterol' ? 'font-semibold text-[#C8163E]' : 'text-[#1A1208]'}>{v}</dd>
+              <div key={k} className="flex items-center justify-between border-b border-[#1C2418]/15 py-3.5 tracking-[0.03em]">
+                <dt className="text-[#1C2418]/70">{k}</dt>
+                <dd className={k === 'Kolesterol' ? 'font-semibold text-[#2B6B35]' : 'text-[#1C2418]'}>{v}</dd>
               </div>
             ))}
           </dl>
-          <p className="mt-4 text-xs tracking-[0.03em] text-[#1A1208]/50">Sumber: label Informasi Nilai Gizi pada kemasan Boga Mas.</p>
+          <p className="mt-4 text-xs tracking-[0.03em] text-[#1C2418]/50">Sumber: label Informasi Nilai Gizi pada kemasan Boga Mas.</p>
         </div>
         <div className="relative order-1 aspect-square md:order-2 md:aspect-auto md:h-full md:min-h-[600px]">
           <Image
@@ -452,19 +526,19 @@ function HowToOrder() {
     { t: 'Paket dikirim', d: 'Pesanan dikemas rapi dan nomor resi dikirim lewat WhatsApp.' },
   ];
   return (
-    <section id="cara-pesan" className="scroll-mt-20 border-t border-[#1A1208]/10 bg-[#FAF7F2]">
+    <section id="cara-pesan" className="scroll-mt-20 border-t border-[#1C2418]/10 bg-[#FFFFFF]">
       <div className="mx-auto max-w-6xl px-4 py-16 sm:px-8 md:py-24">
         <Eyebrow>Cara pesan</Eyebrow>
-        <h2 className={`${serif} mt-6 text-4xl text-[#1A1208] sm:text-[2.6rem]`}>Pesan semudah chat.</h2>
-        <ol className="mt-10 grid border-t border-[#1A1208]/10 sm:grid-cols-2 lg:grid-cols-4">
+        <h2 className={`${serif} mt-6 text-4xl text-[#1C2418] sm:text-[2.6rem]`}>Pesan semudah chat.</h2>
+        <ol className="mt-10 grid border-t border-[#1C2418]/10 sm:grid-cols-2 lg:grid-cols-4">
           {steps.map((s, i) => (
             <li
               key={s.t}
-              className={`border-b border-[#1A1208]/10 py-7 lg:border-b-0 lg:px-6 lg:first:pl-0 ${i > 0 ? 'lg:border-l' : ''} ${i % 2 === 1 ? 'sm:border-l sm:pl-6 lg:pl-6' : 'sm:pr-6'}`}
+              className={`border-b border-[#1C2418]/10 py-7 lg:border-b-0 lg:px-6 lg:first:pl-0 ${i > 0 ? 'lg:border-l' : ''} ${i % 2 === 1 ? 'sm:border-l sm:pl-6 lg:pl-6' : 'sm:pr-6'}`}
             >
-              <span className="text-xs tabular-nums text-[#C8163E]">0{i + 1}</span>
-              <h3 className={`${serif} mt-3 text-2xl text-[#1A1208]`}>{s.t}</h3>
-              <p className="mt-2 text-[15px] leading-[1.75] tracking-[0.03em] text-[#1A1208]/70">{s.d}</p>
+              <span className="text-xs tabular-nums text-[#2B6B35]">0{i + 1}</span>
+              <h3 className={`${serif} mt-3 text-2xl text-[#1C2418]`}>{s.t}</h3>
+              <p className="mt-2 text-[15px] leading-[1.75] tracking-[0.03em] text-[#1C2418]/70">{s.d}</p>
             </li>
           ))}
         </ol>
@@ -498,21 +572,21 @@ const FAQS = [
 
 function Faq() {
   return (
-    <section id="faq" className="scroll-mt-20 bg-[#EFE8DD]">
+    <section id="faq" className="scroll-mt-20 bg-[#FFF7DB]">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:px-8 md:grid-cols-[0.8fr_1.2fr] md:py-24">
         <div>
           <Eyebrow>FAQ</Eyebrow>
-          <h2 className={`${serif} mt-6 text-4xl leading-[1.15] text-[#1A1208] sm:text-[2.6rem]`}>Yang sering ditanyakan.</h2>
-          <p className="mt-5 tracking-[0.03em] text-[#1A1208]/70">Pertanyaan lain? Tanyakan langsung lewat WhatsApp.</p>
+          <h2 className={`${serif} mt-6 text-4xl leading-[1.15] text-[#1C2418] sm:text-[2.6rem]`}>Yang sering ditanyakan.</h2>
+          <p className="mt-5 tracking-[0.03em] text-[#1C2418]/70">Pertanyaan lain? Tanyakan langsung lewat WhatsApp.</p>
         </div>
-        <div className="border-t border-[#1A1208]/15">
+        <div className="border-t border-[#1C2418]/15">
           {FAQS.map((f) => (
-            <details key={f.q} className="group border-b border-[#1A1208]/15 py-5">
-              <summary className={`${serif} flex cursor-pointer list-none items-center justify-between gap-4 text-left text-xl text-[#1A1208] [&::-webkit-details-marker]:hidden`}>
+            <details key={f.q} className="group border-b border-[#1C2418]/15 py-5">
+              <summary className={`${serif} flex cursor-pointer list-none items-center justify-between gap-4 text-left text-xl text-[#1C2418] [&::-webkit-details-marker]:hidden`}>
                 {f.q}
-                <Plus className="h-5 w-5 shrink-0 text-[#C8163E] transition group-open:rotate-45" strokeWidth={1.5} />
+                <Plus className="h-5 w-5 shrink-0 text-[#2B6B35] transition group-open:rotate-45" strokeWidth={1.5} />
               </summary>
-              <p className="mt-3 leading-[1.75] tracking-[0.03em] text-[#1A1208]/70">{f.a}</p>
+              <p className="mt-3 leading-[1.75] tracking-[0.03em] text-[#1C2418]/70">{f.a}</p>
             </details>
           ))}
         </div>
@@ -523,15 +597,15 @@ function Faq() {
 
 function Cta() {
   return (
-    <section className="bg-[#FAF7F2] px-4 py-16 text-center sm:px-8 md:py-20">
-      <h2 className={`${serif} text-[2.6rem] leading-tight text-[#1A1208] sm:text-5xl`}>Ganti minyak di dapur hari ini.</h2>
-      <p className="mx-auto mt-4 max-w-md tracking-[0.03em] text-[#1A1208]/75">
+    <section className="bg-[#FFFFFF] px-4 py-16 text-center sm:px-8 md:py-20">
+      <h2 className={`${serif} text-[2.6rem] leading-tight text-[#1C2418] sm:text-5xl`}>Ganti minyak di dapur hari ini.</h2>
+      <p className="mx-auto mt-4 max-w-md tracking-[0.03em] text-[#1C2418]/75">
         Chat kami sekarang — admin siap bantu pilih ukuran, cek ongkir, dan proses pesanan Anda.
       </p>
       <a
         href={WA_GENERAL}
         {...ext}
-        className="mx-auto mt-8 flex max-w-sm items-center justify-between border border-[#1A1208]/60 px-5 py-3.5 text-left tracking-[0.03em] text-[#1A1208] transition hover:border-[#1A1208]"
+        className="mx-auto mt-8 flex max-w-sm items-center justify-between border border-[#1C2418]/60 px-5 py-3.5 text-left tracking-[0.03em] text-[#1C2418] transition hover:border-[#1C2418]"
       >
         Pesan via WhatsApp <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
       </a>
@@ -547,20 +621,20 @@ function Footer() {
     { label: 'Cara Pesan', href: '#cara-pesan' },
     { label: 'FAQ', href: '#faq' },
   ];
-  const head = 'text-[10px] uppercase tracking-[0.2em] text-[#FAF7F2]/45';
-  const link = 'text-[14px] tracking-[0.03em] text-[#FAF7F2]/75 hover:text-[#FAF7F2]';
+  const head = 'text-[10px] uppercase tracking-[0.2em] text-[#FFFFFF]/45';
+  const link = 'text-[14px] tracking-[0.03em] text-[#FFFFFF]/75 hover:text-[#FFFFFF]';
   return (
-    <footer className="bg-[#1A1208] text-[#FAF7F2]">
+    <footer className="bg-[#1D4D27] text-white">
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:px-8 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
         <div>
           <p className={`${serif} text-2xl`}>Minyak Kelapa Boga Mas</p>
           <p className={`${head} mt-3`}>Purworejo, Jawa Tengah</p>
-          <p className="mt-5 max-w-xs text-[14px] leading-relaxed tracking-[0.03em] text-[#FAF7F2]/65">
+          <p className="mt-5 max-w-xs text-[14px] leading-relaxed tracking-[0.03em] text-[#FFFFFF]/65">
             Dibuat di Purworejo. Satu bahan, tanpa campuran.
           </p>
           <ul className="mt-5 flex max-w-xs flex-wrap gap-2">
             {badges.map((b) => (
-              <li key={b} className="border border-[#FAF7F2]/20 px-2.5 py-1.5 text-[9px] uppercase tracking-[0.14em] text-[#FAF7F2]/60">
+              <li key={b} className="border border-[#FFFFFF]/20 px-2.5 py-1.5 text-[9px] uppercase tracking-[0.14em] text-[#FFFFFF]/60">
                 {b}
               </li>
             ))}
@@ -577,7 +651,7 @@ function Footer() {
               </li>
             ))}
             <li>
-              <a href="#produk" className="text-[14px] tracking-[0.03em] text-[#E0506D] hover:underline">
+              <a href="#produk" className="text-[14px] tracking-[0.03em] text-[#F5C400] hover:underline">
                 Semua produk →
               </a>
             </li>
@@ -600,18 +674,18 @@ function Footer() {
           <ul className="mt-4 space-y-2.5">
             <li>
               <a href={WA_GENERAL} {...ext} className={link}>
-                WhatsApp: +{WA_NUMBER}
+                WhatsApp: {WA_DISPLAY}
               </a>
             </li>
-            <li className="text-[14px] tracking-[0.03em] text-[#FAF7F2]/75">PIRT 205330601026024</li>
+            <li className="text-[14px] tracking-[0.03em] text-[#FFFFFF]/75">PIRT 205330601026024</li>
           </ul>
         </div>
       </div>
-      <div className="border-t border-[#FAF7F2]/10">
+      <div className="border-t border-[#FFFFFF]/10">
         {/* pb/pr ekstra supaya teks tidak tertutup tombol WhatsApp melayang */}
         <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 pb-24 pt-6 text-[11px] tracking-[0.03em] sm:flex-row sm:items-center sm:justify-between sm:px-8 sm:py-6 sm:pr-24">
-          <p className="text-[#FAF7F2]/40">© {new Date().getFullYear()} Boga Mas. Minyak goreng kelapa murni.</p>
-          <p className="uppercase tracking-[0.14em] text-[#E0506D]">Kelapa saja. Tanpa campuran.</p>
+          <p className="text-[#FFFFFF]/40">© {new Date().getFullYear()} Boga Mas. Minyak goreng kelapa murni.</p>
+          <p className="uppercase tracking-[0.14em] text-[#F5C400]">Kelapa saja. Tanpa campuran.</p>
         </div>
       </div>
     </footer>
@@ -633,7 +707,7 @@ function FloatingWa() {
 
 export default function BogamasLanding() {
   return (
-    <div className="min-h-screen bg-[#FAF7F2] text-[#1A1208] [font-family:var(--font-bm-sans)]">
+    <div className="min-h-screen bg-[#FFFFFF] text-[#1C2418] [font-family:var(--font-bm-sans)]">
       <AnnouncementBar />
       <Navbar />
       <main>
@@ -641,6 +715,7 @@ export default function BogamasLanding() {
         <Marquee />
         <Stats />
         <Story />
+        <Production />
         <Products />
         <Reviews />
         <OurPromise />
