@@ -13,17 +13,20 @@ const WA_DISPLAY = '0838-7857-4713';
 // Harga sementara disembunyikan dari halaman; ubah ke true untuk menampilkannya lagi.
 const SHOW_PRICES = false;
 // Harga contoh — samakan dengan harga di menu Toko > Produk.
-const PRODUCTS = [
-  {
-    name: 'Minyak Kelapa 100 ml',
-    desc: 'Botol kecil untuk mencoba, bekal, atau oles.',
-    price: 8000,
-    img: '/bogamas/botol-100ml.jpg',
-  },
+// price null = harga belum ada; tampil "Tanya harga via WhatsApp" bila SHOW_PRICES aktif.
+const PRODUCTS: { name: string; desc: string; price: number | null; img: string }[] = [
   {
     name: 'Minyak Kelapa 1 Liter',
     desc: 'Ukuran harian untuk dapur rumah tangga.',
     price: 45000,
+    img: '/bogamas/botol-1l.jpg',
+  },
+  {
+    name: 'Minyak Kelapa 1,5 Liter',
+    desc: 'Ukuran hemat untuk keluarga yang sering menggoreng.',
+    // TODO: harga 1,5 L belum dari klien.
+    price: null,
+    // TODO: ganti dengan foto kemasan 1,5 L dari klien; sementara pakai foto botol 1 L.
     img: '/bogamas/botol-1l.jpg',
   },
   {
@@ -76,13 +79,13 @@ const NAV = [
 
 const ANNOUNCEMENTS = [
   'Pesan langsung via WhatsApp — bisa transfer atau COD',
-  'Minyak goreng kelapa murni dari Purworejo',
+  'Minyak goreng kelapa murni dari Purworejo, sejak 2010',
   'Halal MUI · Terdaftar PIRT · Non kolesterol',
 ];
 
 const CLAIMS = [
   'Kelapa saja. Tanpa campuran.',
-  'Dibuat di Purworejo',
+  'Dibuat di Purworejo sejak 2010',
   '0 g kolesterol per sajian',
   'Halal MUI',
   'Terdaftar PIRT',
@@ -258,7 +261,7 @@ function Stats() {
   const items = [
     { k: '100%', v: 'Dari minyak kelapa murni' },
     { k: '0 g', v: 'Kolesterol per sajian 14 g' },
-    { k: '4', v: 'Pilihan ukuran, 100 ml sampai 1 karton' },
+    { k: '4', v: 'Pilihan ukuran, 1 liter sampai 1 karton' },
     { k: 'PIRT', v: 'Halal MUI & terdaftar resmi' },
   ];
   return (
@@ -295,7 +298,7 @@ function Story() {
               Hasilnya harum, gurih, dan awet dipakai menggoreng.
             </p>
             <p>
-              Boga Mas meneruskan cara itu dari Purworejo, Jawa Tengah. Kami pakai kelapa pilihan, diolah higienis, dan
+              Sejak 2010, Boga Mas meneruskan cara itu dari Purworejo, Jawa Tengah. Kami pakai kelapa pilihan, diolah higienis, dan
               tidak dicampur minyak lain. Yang ada di botol hanya satu: minyak kelapa.
             </p>
           </div>
@@ -398,7 +401,7 @@ function Products() {
                   {p.name} — {p.desc}
                 </h3>
               </a>
-              {SHOW_PRICES && <p className="mt-2 text-[15px] tracking-[0.05em] text-[#1C2418]">{rupiah(p.price)}</p>}
+              {SHOW_PRICES && <p className="mt-2 text-[15px] tracking-[0.05em] text-[#1C2418]">{p.price !== null ? rupiah(p.price) : 'Tanya harga via WhatsApp'}</p>}
               <a
                 href={waLink(`Halo Bogamas, saya mau pesan ${p.name} 😊`)}
                 {...ext}
@@ -628,7 +631,7 @@ function Footer() {
       <div className="mx-auto grid max-w-6xl gap-10 px-4 py-16 sm:px-8 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
         <div>
           <p className={`${serif} text-2xl`}>Minyak Kelapa Boga Mas</p>
-          <p className={`${head} mt-3`}>Purworejo, Jawa Tengah</p>
+          <p className={`${head} mt-3`}>Purworejo, Jawa Tengah · Sejak 2010</p>
           <p className="mt-5 max-w-xs text-[14px] leading-relaxed tracking-[0.03em] text-[#FFFFFF]/65">
             Dibuat di Purworejo. Satu bahan, tanpa campuran.
           </p>

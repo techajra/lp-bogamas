@@ -8,7 +8,7 @@ const sans = DM_Sans({ subsets: ['latin'], variable: '--font-bm-sans' });
 export const metadata: Metadata = {
   title: 'Bogamas — Minyak Goreng Kelapa Murni dari Purworejo',
   description:
-    'Minyak goreng kelapa Bogamas: dibuat dari kelapa pilihan, non kolesterol, halal & terdaftar PIRT. Tersedia 100 ml, 1 liter, 5 liter, dan paket karton. Pesan langsung via WhatsApp.',
+    'Minyak goreng kelapa Bogamas: dibuat di Purworejo sejak 2010 dari kelapa pilihan, non kolesterol, halal & terdaftar PIRT. Tersedia 1 liter, 1,5 liter, 5 liter, dan paket karton. Pesan langsung via WhatsApp.',
   openGraph: {
     title: 'Bogamas — Minyak Goreng Kelapa Murni',
     description: 'Satu bahan. Kelapa pilihan. Tanpa campuran. Pesan via WhatsApp, bisa transfer atau COD.',
